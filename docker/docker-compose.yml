@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:14.7-alpine
+    container_name: db-task-management-system
+    environment:
+      POSTGRES_DB: task-management-system
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready", "-d", "task-management-system" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    ports:
+      - "15432:5432"
+    restart: always
