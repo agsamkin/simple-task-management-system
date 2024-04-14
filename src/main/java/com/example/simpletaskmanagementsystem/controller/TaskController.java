@@ -4,7 +4,6 @@ import com.example.simpletaskmanagementsystem.dto.TaskDto;
 import com.example.simpletaskmanagementsystem.model.Task;
 import com.example.simpletaskmanagementsystem.service.TaskService;
 
-import com.querydsl.core.types.Predicate;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
-import java.util.Objects;
 
 import static com.example.simpletaskmanagementsystem.controller.TaskController.TASK_CONTROLLER_PATH;
 import static org.springframework.http.HttpStatus.CREATED;
@@ -49,15 +46,11 @@ public class TaskController {
         return taskService.getTaskById(id);
     }
 
-    @Operation(summary = "Get all tasks if no filtration is set."
-            + " Else Retrieves all the elements that match the conditions defined by the specified predicate")
+    @Operation(summary = "Get all tasks")
     @ApiResponse(responseCode = "200")
     @GetMapping
-    public List<Task> getAll(@QuerydslPredicate final Predicate predicate) {
-        if (Objects.isNull(predicate)) {
-            return taskService.getAllTasks();
-        }
-        return taskService.getAllTasks(predicate);
+    public List<Task> getAll() {
+        return taskService.getAllTasks();
     }
 
     @Operation(summary = "Create new task")

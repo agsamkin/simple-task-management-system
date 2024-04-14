@@ -6,16 +6,12 @@ import com.example.simpletaskmanagementsystem.model.Task;
 import com.example.simpletaskmanagementsystem.repository.TaskRepository;
 import com.example.simpletaskmanagementsystem.service.TaskService;
 
-import com.querydsl.core.types.Predicate;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 @Transactional
 @RequiredArgsConstructor
@@ -35,15 +31,6 @@ public class TaskServiceImpl implements TaskService {
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
     }
-
-    @Transactional(readOnly = true)
-    @Override
-    public List<Task> getAllTasks(Predicate predicate) {
-        return StreamSupport
-                .stream(taskRepository.findAll(predicate).spliterator(), false)
-                .collect(Collectors.toList());
-    }
-
 
     @Override
     public Task createTask(TaskDto taskDto) {
