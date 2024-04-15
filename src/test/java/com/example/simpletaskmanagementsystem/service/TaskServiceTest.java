@@ -1,5 +1,6 @@
 package com.example.simpletaskmanagementsystem.service;
 
+import com.example.simpletaskmanagementsystem.dto.TaskDto;
 import com.example.simpletaskmanagementsystem.exception.custom.TaskNotFoundException;
 import com.example.simpletaskmanagementsystem.model.Task;
 import com.example.simpletaskmanagementsystem.repository.TaskRepository;
@@ -9,6 +10,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,13 +24,12 @@ import static com.example.simpletaskmanagementsystem.util.TestUtil.TEST_TASK_2;
 import static com.example.simpletaskmanagementsystem.util.TestUtil.TEST_TASK_DTO_1;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,107 +41,128 @@ class TaskServiceTest {
     @Mock
     private TaskRepository taskRepository;
 
+    @Captor
+    private ArgumentCaptor<Task> argumentCaptor;
+
     @DisplayName("Get task by id is OK")
     @Test
     void getTaskByIdIsOk() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenReturn(Optional.of(TEST_TASK_1));
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.of(expectedTask));
 
-        assertThat(taskService.getTaskById(TEST_TASK_1.getId())).isEqualTo(TEST_TASK_1);
+        Task actualTask = taskService.getTaskById(expectedTask.getId());
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
+        assertThat(actualTask).usingRecursiveComparison().isEqualTo(TEST_TASK_1);
+        verify(taskRepository).findById(TEST_TASK_1.getId());
     }
 
     @DisplayName("Get task by id is fails")
     @Test
     void getTaskByIdIsFails() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenThrow(new TaskNotFoundException("Task not found"));
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> taskService.getTaskById(TEST_TASK_1.getId()))
-                .isInstanceOf(Throwable.class).hasMessage("Task not found");
+        assertThatThrownBy(() -> taskService.getTaskById(expectedTask.getId()))
+                .isInstanceOf(TaskNotFoundException.class).hasMessage("Task not found");
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
+        verify(taskRepository).findById(expectedTask.getId());
+        verifyNoMoreInteractions(taskRepository);
     }
 
     @DisplayName("Get all tasks return all")
     @Test
     void getAllTasksReturnAll() {
-        List<Task> tasks = List.of(TEST_TASK_1, TEST_TASK_2);
+        List<Task> expectedTasks = List.of(TEST_TASK_1, TEST_TASK_2);
+        when(taskRepository.findAll()).thenReturn(expectedTasks);
 
-        when(taskRepository.findAll()).thenReturn(tasks);
+        List<Task> actualTasks = taskService.getAllTasks();
 
-        assertThat(taskService.getAllTasks()).isEqualTo(tasks);
-
-        verify(taskRepository, times(1)).findAll();
+        assertThat(actualTasks).usingRecursiveComparison().isEqualTo(expectedTasks);
+        verify(taskRepository).findAll();
     }
 
     @DisplayName("Get all tasks return 0")
     @Test
     void getAllTasksReturn0() {
-        List<Task> tasks = List.of();
+        List<Task> expectedTasks = List.of();
+        when(taskRepository.findAll()).thenReturn(expectedTasks);
 
-        when(taskRepository.findAll()).thenReturn(tasks);
+        List<Task> actualTasks = taskService.getAllTasks();
 
-        assertThat(taskService.getAllTasks()).isEqualTo(tasks);
-
-        verify(taskRepository, times(1)).findAll();
+        assertThat(actualTasks).usingRecursiveComparison().isEqualTo(expectedTasks);
+        verify(taskRepository).findAll();
     }
 
     @DisplayName("Create task is OK")
     @Test
     void createTaskIsOk() {
-        when(taskRepository.save(any(Task.class))).thenReturn(TEST_TASK_1);
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.save(any(Task.class))).thenReturn(expectedTask);
 
-        assertThat(taskService.createTask(TEST_TASK_DTO_1)).isEqualTo(TEST_TASK_1);
+        TaskDto fromDto = TEST_TASK_DTO_1;
+        taskService.createTask(fromDto);
 
-        verify(taskRepository, times(1)).save(any(Task.class));
+        verify(taskRepository).save(argumentCaptor.capture());
+        Task actualTask = argumentCaptor.getValue();
+        assertThat(actualTask).usingRecursiveComparison().ignoringFields("id").isEqualTo(expectedTask);
     }
 
     @DisplayName("Update task is OK")
     @Test
     void updateTaskIsOk() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenReturn(Optional.of(TEST_TASK_1));
-        when(taskRepository.save(any(Task.class))).thenReturn(TEST_TASK_1);
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.of(expectedTask));
+        when(taskRepository.save(any(Task.class))).thenReturn(expectedTask);
 
-        assertThat(taskService.updateTask(TEST_TASK_1.getId(), TEST_TASK_DTO_1)).isEqualTo(TEST_TASK_1);
+        TaskDto fromDto = TEST_TASK_DTO_1;
+        taskService.updateTask(expectedTask.getId(), fromDto);
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
-        verify(taskRepository, times(1)).save(any(Task.class));
+        verify(taskRepository).findById(expectedTask.getId());
+        verify(taskRepository).save(argumentCaptor.capture());
+        Task actualTask = argumentCaptor.getValue();
+        assertThat(actualTask).usingRecursiveComparison().isEqualTo(expectedTask);
     }
 
     @DisplayName("Update task is fails")
     @Test
     void updateTaskIsFails() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenThrow(new TaskNotFoundException("Task not found"));
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> taskService.updateTask(TEST_TASK_1.getId(), TEST_TASK_DTO_1))
-                .isInstanceOf(Throwable.class).hasMessage("Task not found");
+        TaskDto fromDto = TEST_TASK_DTO_1;
+        assertThatThrownBy(() -> taskService.updateTask(expectedTask.getId(), fromDto))
+                .isInstanceOf(TaskNotFoundException.class).hasMessage("Task not found");
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
-        verify(taskRepository, times(0)).save(any(Task.class));
+        verify(taskRepository).findById(expectedTask.getId());
+        verifyNoMoreInteractions(taskRepository);
     }
 
     @DisplayName("Delete task is OK")
     @Test
     void deleteTaskIsOk() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenReturn(Optional.of(TEST_TASK_1));
-        doNothing().when(taskRepository).delete(TEST_TASK_1);
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.of(expectedTask));
+        doNothing().when(taskRepository).delete(expectedTask);
 
-        assertThatNoException().isThrownBy(() -> taskService.deleteTask(TEST_TASK_1.getId()));
+        taskService.deleteTask(expectedTask.getId());
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
-        verify(taskRepository, times(1)).delete(TEST_TASK_1);
+        verify(taskRepository).findById(expectedTask.getId());
+        verify(taskRepository).delete(argumentCaptor.capture());
+        Task actualTask = argumentCaptor.getValue();
+        assertThat(actualTask).usingRecursiveComparison().isEqualTo(expectedTask);
     }
 
     @DisplayName("Delete task is fails")
     @Test
     void deleteTaskIsFails() {
-        when(taskRepository.findById(TEST_TASK_1.getId())).thenThrow(new TaskNotFoundException("Task not found"));
+        Task expectedTask = TEST_TASK_1;
+        when(taskRepository.findById(expectedTask.getId())).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> taskService.deleteTask(TEST_TASK_1.getId()))
-                .isInstanceOf(Throwable.class).hasMessage("Task not found");
+        assertThatThrownBy(() -> taskService.deleteTask(expectedTask.getId()))
+                .isInstanceOf(TaskNotFoundException.class).hasMessage("Task not found");
 
-        verify(taskRepository, times(1)).findById(TEST_TASK_1.getId());
-        verify(taskRepository, times(0)).delete(TEST_TASK_1);
+        verify(taskRepository).findById(expectedTask.getId());
+        verifyNoMoreInteractions(taskRepository);
     }
 
 }

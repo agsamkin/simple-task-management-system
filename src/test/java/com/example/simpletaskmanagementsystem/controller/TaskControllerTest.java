@@ -26,12 +26,13 @@ import static com.example.simpletaskmanagementsystem.util.TestUtil.TEST_TASK_DTO
 import static com.example.simpletaskmanagementsystem.util.TestUtil.TEST_TASK_DTO_2;
 
 import static org.hamcrest.Matchers.hasSize;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -59,87 +60,92 @@ class TaskControllerTest {
     @DisplayName("Get task by id is OK")
     @Test
     void getByIdIsOk() throws Exception {
-        when(taskService.getTaskById(TEST_TASK_1.getId())).thenReturn(TEST_TASK_1);
+        Task expectedTask = TEST_TASK_1;
+        when(taskService.getTaskById(expectedTask.getId())).thenReturn(expectedTask);
 
         mockMvc.perform(
                 get(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID
-                        , TEST_TASK_1.getId()))
+                        , expectedTask.getId()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(TEST_TASK_1.getId()))
-                .andExpect(jsonPath("$.title").value(TEST_TASK_1.getTitle()));
+                .andExpect(jsonPath("$.id").value(expectedTask.getId()))
+                .andExpect(jsonPath("$.title").value(expectedTask.getTitle()));
 
-        verify(taskService, times(1)).getTaskById(TEST_TASK_1.getId());
+        verify(taskService).getTaskById(expectedTask.getId());
     }
 
     @DisplayName("Get task by id is fails")
     @Test
     void getByIdIsFails() throws Exception {
-        when(taskService.getTaskById(TEST_TASK_1.getId())).thenThrow(new TaskNotFoundException("Task not found"));
+        Task expectedTask = TEST_TASK_1;
+        when(taskService.getTaskById(expectedTask.getId())).thenThrow(new TaskNotFoundException("Task not found"));
 
-        mockMvc.perform(get(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, TEST_TASK_1.getId()))
+        mockMvc.perform(get(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, expectedTask.getId()))
                 .andExpect(status().isNotFound())
                 .andExpect(result -> assertTrue(result.getResolvedException() instanceof TaskNotFoundException))
                 .andExpect(result -> assertEquals("Task not found", result.getResolvedException().getMessage()));
 
-        verify(taskService, times(1)).getTaskById(TEST_TASK_1.getId());
+        verify(taskService).getTaskById(expectedTask.getId());
     }
 
     @DisplayName("Get all tasks return all")
     @Test
     void getAllReturnAll() throws Exception {
-        List<Task> tasks = List.of(TEST_TASK_1, TestUtil.TEST_TASK_2);
-
-        when(taskService.getAllTasks()).thenReturn(tasks);
+        List<Task> expectedTasks = List.of(TEST_TASK_1, TestUtil.TEST_TASK_2);
+        when(taskService.getAllTasks()).thenReturn(expectedTasks);
 
         mockMvc.perform(get(BASE_URL + TaskController.TASK_CONTROLLER_PATH))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.*", hasSize(2)));
 
-        verify(taskService, times(1)).getAllTasks();
+        verify(taskService).getAllTasks();
     }
 
     @DisplayName("Get all tasks return 0")
     @Test
     void getAllReturn0() throws Exception {
-        List<Task> tasks = List.of();
-
-        when(taskService.getAllTasks()).thenReturn(tasks);
+        List<Task> expectedTasks = List.of();
+        when(taskService.getAllTasks()).thenReturn(expectedTasks);
 
         mockMvc.perform(get(BASE_URL + TaskController.TASK_CONTROLLER_PATH))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.*", hasSize(0)));
 
-        verify(taskService, times(1)).getAllTasks();
+        verify(taskService).getAllTasks();
     }
 
     @DisplayName("Create task is OK")
     @Test
     void createIsOk() throws Exception {
-        when(taskService.createTask(any(TaskDto.class))).thenReturn(TEST_TASK_1);
+        Task expectedTask = TEST_TASK_1;
+        when(taskService.createTask(any(TaskDto.class))).thenReturn(expectedTask);
 
+        TaskDto fromDto = TEST_TASK_DTO_1;
         mockMvc.perform(post(BASE_URL + TASK_CONTROLLER_PATH)
                 .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(TEST_TASK_DTO_1)))
+                .content(objectMapper.writeValueAsString(fromDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(TEST_TASK_1.getId()))
                 .andExpect(jsonPath("$.title").value(TEST_TASK_1.getTitle()));
 
-        verify(taskService, times(1)).createTask(any(TaskDto.class));
+        verify(taskService).createTask(any(TaskDto.class));
     }
 
     @DisplayName("Update task is OK")
     @Test
     void updateIsOk() throws Exception {
-        when(taskService.updateTask(any(Long.class), any(TaskDto.class))).thenReturn(TEST_TASK_2);
+        Task expectedTask = TEST_TASK_2;
+        when(taskService.updateTask(any(Long.class), any(TaskDto.class))).thenReturn(expectedTask);
 
-        mockMvc.perform(put(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, TEST_TASK_1.getId())
+        long updateId = TEST_TASK_1.getId();
+        TaskDto fromDto = TEST_TASK_DTO_2;
+        mockMvc.perform(put(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, updateId)
                 .contentType(APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(TEST_TASK_DTO_2)))
+                .content(objectMapper.writeValueAsString(fromDto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.title").value(TEST_TASK_2.getTitle()))
-                .andExpect(jsonPath("$.description").value(TEST_TASK_2.getDescription()));
+                .andExpect(jsonPath("$.title").value(expectedTask.getTitle()))
+                .andExpect(jsonPath("$.description").value(expectedTask.getDescription()));
 
-        verify(taskService, times(1)).updateTask(any(Long.class), any(TaskDto.class));
+        verify(taskService).updateTask(any(Long.class), any(TaskDto.class));
     }
 
     @DisplayName("Update task is fails")
@@ -147,41 +153,42 @@ class TaskControllerTest {
     void updateIsFails() throws Exception {
         when(taskService.updateTask(any(Long.class), any(TaskDto.class))).thenThrow(new TaskNotFoundException("Task not found"));
 
-        mockMvc.perform(put(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID,
-                        TEST_TASK_1.getId())
+        long updateId = TEST_TASK_1.getId();
+        TaskDto fromDto = TEST_TASK_DTO_2;
+        mockMvc.perform(put(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, updateId)
                         .contentType(APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(TEST_TASK_DTO_2)))
+                        .content(objectMapper.writeValueAsString(fromDto)))
                 .andExpect(status().isNotFound())
                 .andExpect(result -> assertTrue(result.getResolvedException() instanceof TaskNotFoundException))
                 .andExpect(result -> assertEquals("Task not found", result.getResolvedException().getMessage()));
 
-        verify(taskService, times(1)).updateTask(any(Long.class), any(TaskDto.class));
+        verify(taskService).updateTask(any(Long.class), any(TaskDto.class));
     }
 
     @DisplayName("Delete task is OK")
     @Test
     void deleteIsOk() throws Exception {
-        doNothing().when(taskService).deleteTask(TEST_TASK_1.getId());
+        Task expectedTask = TEST_TASK_1;
+        doNothing().when(taskService).deleteTask(expectedTask.getId());
 
-        mockMvc.perform(delete(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID,
-                        TEST_TASK_1.getId()))
+        mockMvc.perform(delete(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, expectedTask.getId()))
                 .andExpect(status().isOk());
 
-        verify(taskService, times(1)).deleteTask(TEST_TASK_1.getId());
+        verify(taskService).deleteTask(expectedTask.getId());
     }
 
     @DisplayName("Delete task is fails")
     @Test
     void deleteIsFails() throws Exception {
+        Task expectedTask = TEST_TASK_1;
         doThrow(new TaskNotFoundException("Task not found")).when(taskService).deleteTask(any(Long.class));
 
-        mockMvc.perform(delete(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID,
-                        TEST_TASK_1.getId()))
+        mockMvc.perform(delete(BASE_URL + TASK_CONTROLLER_PATH + TaskController.ID, expectedTask.getId()))
                 .andExpect(status().isNotFound())
                 .andExpect(result -> assertTrue(result.getResolvedException() instanceof TaskNotFoundException))
                 .andExpect(result -> assertEquals("Task not found", result.getResolvedException().getMessage()));
 
-        verify(taskService, times(1)).deleteTask(TEST_TASK_1.getId());
+        verify(taskService).deleteTask(expectedTask.getId());
     }
 
 }
