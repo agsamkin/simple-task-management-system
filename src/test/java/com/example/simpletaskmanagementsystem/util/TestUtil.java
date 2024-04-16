@@ -3,10 +3,6 @@ package com.example.simpletaskmanagementsystem.util;
 import com.example.simpletaskmanagementsystem.dto.TaskDto;
 import com.example.simpletaskmanagementsystem.model.Task;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -40,14 +36,4 @@ public class TestUtil {
                     .description("description2")
                     .dueDate(LocalDateTime.of(2024, 4, 3, 10, 15, 20))
                     .completed(true).build();
-
-    private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
-
-    public static String asJson(final Object object) throws JsonProcessingException {
-        return MAPPER.writeValueAsString(object);
-    }
-
-    public static <T> T fromJson(final String json, final TypeReference<T> to) throws JsonProcessingException {
-        return MAPPER.readValue(json, to);
-    }
 }
